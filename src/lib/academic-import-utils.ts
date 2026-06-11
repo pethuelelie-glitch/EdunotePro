@@ -58,6 +58,7 @@ export interface GradeImportRecord {
   module_code: string;
   score: number;
   session: string;
+  coefficient: number;
   class_name: string;
   year_label: string;
   rowIndex: number;
@@ -117,7 +118,8 @@ function normalizeSheetName(name: string): string {
 function parseYearStatus(raw: string): YearStatus {
   const v = raw.trim().toLowerCase();
   if (["active", "actif", "actuelle", "en_cours"].includes(v)) return "active";
-  if (["archived", "archive", "archivee", "archivée", "terminee", "terminée"].includes(v)) return "archived";
+  if (["archived", "archive", "archivee", "archivée", "terminee", "terminée"].includes(v))
+    return "archived";
   return "upcoming";
 }
 
@@ -148,7 +150,8 @@ function mapYearRow(row: ParsedImportRow, fallbackLabel = ""): YearImportRecord 
   const now = new Date();
   const y = now.getFullYear();
   const start_date =
-    parseDate(cellToString(row.start_date ?? row.debut ?? row.date_debut ?? row.start)) ?? `${y}-09-01`;
+    parseDate(cellToString(row.start_date ?? row.debut ?? row.date_debut ?? row.start)) ??
+    `${y}-09-01`;
   const end_date =
     parseDate(cellToString(row.end_date ?? row.fin ?? row.date_fin ?? row.end)) ?? `${y + 1}-06-30`;
   return {
@@ -161,10 +164,23 @@ function mapYearRow(row: ParsedImportRow, fallbackLabel = ""): YearImportRecord 
 
 type InferredEntity = "year" | "classes" | "modules" | "students" | "grades";
 
-function inferEntityFromHeaders(rows: ParsedImportRow[]): InferredEntity {
+function inferEntityFromHeaders(rows: ParsedImportRow[]): InferredEntity | "flat" {
   if (!rows.length) return "students";
   const headers = new Set(Object.keys(rows[0] ?? {}).map((h) => normalizeHeader(h)));
-  if ((headers.has("score") || headers.has("note")) && (headers.has("matricule") || headers.has("module_code") || headers.has("code")))
+
+  // Intelligent Flat Detection: If we see mix of Student AND Grade AND Module
+  if (
+    (headers.has("nom") || headers.has("last_name")) &&
+    (headers.has("note") || headers.has("score")) &&
+    (headers.has("matiere") || headers.has("module"))
+  ) {
+    return "flat";
+  }
+
+  if (
+    (headers.has("score") || headers.has("note")) &&
+    (headers.has("matricule") || headers.has("module_code") || headers.has("code"))
+  )
     return "grades";
   if (headers.has("coefficient") || headers.has("coef")) return "modules";
   if (headers.has("start_date") || headers.has("debut") || headers.has("end_date")) return "year";
@@ -183,11 +199,15 @@ function inferEntityFromHeaders(rows: ParsedImportRow[]): InferredEntity {
 
 function appendMapped(
   payload: AcademicImportPayload,
-  entity: InferredEntity,
+  entity: InferredEntity | "flat",
   rows: ParsedImportRow[],
   defaultYear: string,
   sheetClassName: string,
 ) {
+  if (entity === "flat") {
+    extractFlatRows(rows, payload, defaultYear);
+    return;
+  }
   if (entity === "year") {
     payload.year = mapYearRow(rows[0] ?? {}, defaultYear) ?? payload.year;
     return;
@@ -205,6 +225,106 @@ function appendMapped(
     return;
   }
   payload.students.push(...mapStudents(rows, defaultYear, sheetClassName).records);
+}
+
+function extractFlatRows(
+  rows: ParsedImportRow[],
+  payload: AcademicImportPayload,
+  defaultYear: string,
+) {
+  rows.forEach((row, i) => {
+    const rowIndex = i + 2;
+    if (!rowHasData(row)) return;
+
+    const year_label = cellToString(row.year_label ?? row.annee ?? row.year) || defaultYear;
+
+    // Extract Class
+    const class_name = cellToString(row.class_name ?? row.classe ?? row.class);
+    if (
+      class_name &&
+      !payload.classes.some((c) => c.name.toLowerCase() === class_name.toLowerCase())
+    ) {
+      payload.classes.push({
+        name: class_name,
+        level: null,
+        description: null,
+        year_label,
+        rowIndex,
+      });
+    }
+
+    // Extract Module
+    const module_name = cellToString(row.module_name ?? row.matiere ?? row.module ?? row.cours);
+    let module_code = cellToString(row.module_code ?? row.code);
+    if (module_name && !module_code) module_code = slugCode(module_name, rowIndex);
+
+    if (module_code && class_name) {
+      if (!payload.modules.some((m) => m.code === module_code && m.class_name === class_name)) {
+        payload.modules.push({
+          code: module_code,
+          name: module_name || module_code,
+          coefficient:
+            Number(cellToString(row.coefficient ?? row.coef ?? row.coef_matiere ?? "1")) || 1,
+          class_name,
+          year_label,
+          rowIndex,
+        });
+      }
+    }
+
+    // Extract Student
+    let first_name = cellToString(row.first_name ?? row.prenom);
+    let last_name = cellToString(row.last_name ?? row.nom);
+    const fullName = cellToString(row.full_name ?? row.nom_complet);
+
+    if (fullName && !first_name && !last_name) {
+      const split = splitFullName(fullName);
+      first_name = split.first_name;
+      last_name = split.last_name;
+    }
+
+    let matricule = cellToString(row.matricule ?? row.id);
+
+    if (last_name || first_name || matricule) {
+      if (!first_name) first_name = last_name || "—";
+      if (!last_name) last_name = first_name || "—";
+      if (!matricule) matricule = `AUTO-${slugCode(first_name + last_name, rowIndex)}`;
+
+      if (!payload.students.some((s) => s.matricule === matricule)) {
+        payload.students.push({
+          matricule,
+          first_name,
+          last_name,
+          gender: parseGender(cellToString(row.gender ?? row.sexe)),
+          date_of_birth: parseDate(cellToString(row.date_of_birth ?? row.date_naissance)),
+          email: cellToString(row.email) || null,
+          phone: cellToString(row.phone ?? row.telephone) || null,
+          address: cellToString(row.address ?? row.adresse) || null,
+          class_name: class_name || "Import Global",
+          year_label,
+          rowIndex,
+        });
+      }
+    }
+
+    // Extract Grade
+    const scoreRaw = cellToString(row.score ?? row.note ?? row.valeur);
+    if (scoreRaw !== "") {
+      const score = Number(scoreRaw);
+      if (Number.isFinite(score) && matricule && module_code && class_name) {
+        payload.grades.push({
+          matricule,
+          module_code,
+          score: Math.min(20, Math.max(0, score)),
+          session: cellToString(row.session ?? row.evaluation ?? row.type_note) || "Évaluation 1",
+          coefficient: Number(cellToString(row.grade_coef ?? row.coef_note)) || 1,
+          class_name,
+          year_label,
+          rowIndex,
+        });
+      }
+    }
+  });
 }
 
 function defaultYearLabel(payload: AcademicImportPayload, fallback?: string): string {
@@ -229,7 +349,10 @@ function slugCode(text: string, rowIndex: number): string {
   return base || `M${rowIndex}`;
 }
 
-function mapClasses(rows: ParsedImportRow[], defaultYear: string): { records: ClassImportRecord[] } {
+function mapClasses(
+  rows: ParsedImportRow[],
+  defaultYear: string,
+): { records: ClassImportRecord[] } {
   const records: ClassImportRecord[] = [];
   rows.forEach((row, i) => {
     const rowIndex = i + 2;
@@ -247,7 +370,11 @@ function mapClasses(rows: ParsedImportRow[], defaultYear: string): { records: Cl
   return { records };
 }
 
-function mapModules(rows: ParsedImportRow[], defaultYear: string, defaultClass = ""): { records: ModuleImportRecord[] } {
+function mapModules(
+  rows: ParsedImportRow[],
+  defaultYear: string,
+  defaultClass = "",
+): { records: ModuleImportRecord[] } {
   const records: ModuleImportRecord[] = [];
   rows.forEach((row, i) => {
     const rowIndex = i + 2;
@@ -262,7 +389,8 @@ function mapModules(rows: ParsedImportRow[], defaultYear: string, defaultClass =
       code,
       name: name || code,
       coefficient: Number.isFinite(coefficient) && coefficient > 0 ? coefficient : 1,
-      class_name: cellToString(row.class_name ?? row.classe ?? row.class) || defaultClass || "Import",
+      class_name:
+        cellToString(row.class_name ?? row.classe ?? row.class) || defaultClass || "Import",
       year_label: cellToString(row.year_label ?? row.annee ?? row.year) || defaultYear,
       rowIndex,
     });
@@ -270,7 +398,11 @@ function mapModules(rows: ParsedImportRow[], defaultYear: string, defaultClass =
   return { records };
 }
 
-function mapStudents(rows: ParsedImportRow[], defaultYear: string, defaultClass = ""): { records: StudentImportRecord[] } {
+function mapStudents(
+  rows: ParsedImportRow[],
+  defaultYear: string,
+  defaultClass = "",
+): { records: StudentImportRecord[] } {
   const records: StudentImportRecord[] = [];
   let autoNum = 0;
   rows.forEach((row, i) => {
@@ -288,7 +420,9 @@ function mapStudents(rows: ParsedImportRow[], defaultYear: string, defaultClass 
     if (!first_name && last_name) first_name = last_name;
     if (!last_name && first_name) last_name = first_name;
     if (!first_name && !last_name) {
-      const fallback = Object.values(row).map(cellToString).find((v) => v.length > 1);
+      const fallback = Object.values(row)
+        .map(cellToString)
+        .find((v) => v.length > 1);
       if (!fallback) return;
       const split = splitFullName(fallback);
       first_name = split.first_name;
@@ -312,7 +446,8 @@ function mapStudents(rows: ParsedImportRow[], defaultYear: string, defaultClass 
       email: cellToString(row.email) || null,
       phone: cellToString(row.phone ?? row.telephone) || null,
       address: cellToString(row.address ?? row.adresse) || null,
-      class_name: cellToString(row.class_name ?? row.classe ?? row.class) || defaultClass || "Import",
+      class_name:
+        cellToString(row.class_name ?? row.classe ?? row.class) || defaultClass || "Import",
       year_label: cellToString(row.year_label ?? row.annee ?? row.year) || defaultYear,
       rowIndex,
     });
@@ -320,7 +455,11 @@ function mapStudents(rows: ParsedImportRow[], defaultYear: string, defaultClass 
   return { records };
 }
 
-function mapGrades(rows: ParsedImportRow[], defaultYear: string, defaultClass = ""): { records: GradeImportRecord[] } {
+function mapGrades(
+  rows: ParsedImportRow[],
+  defaultYear: string,
+  defaultClass = "",
+): { records: GradeImportRecord[] } {
   const records: GradeImportRecord[] = [];
   rows.forEach((row, i) => {
     const rowIndex = i + 2;
@@ -338,8 +477,10 @@ function mapGrades(rows: ParsedImportRow[], defaultYear: string, defaultClass = 
       matricule,
       module_code,
       score: Math.min(20, Math.max(0, score)),
-      session: cellToString(row.session ?? row.session_name) || "Session 1",
-      class_name: cellToString(row.class_name ?? row.classe ?? row.class) || defaultClass || "Import",
+      session: cellToString(row.session ?? row.session_name) || "Évaluation 1",
+      coefficient: Number(cellToString(row.grade_coef ?? row.coef_note)) || 1,
+      class_name:
+        cellToString(row.class_name ?? row.classe ?? row.class) || defaultClass || "Import",
       year_label: cellToString(row.year_label ?? row.annee ?? row.year) || defaultYear,
       rowIndex,
     });
@@ -389,7 +530,10 @@ function parseJsonPayload(data: unknown): AcademicImportPayload {
   };
 }
 
-export function parseAcademicImportFile(file: File, fallbackYearLabel = ""): Promise<AcademicImportPreview> {
+export function parseAcademicImportFile(
+  file: File,
+  fallbackYearLabel = "",
+): Promise<AcademicImportPreview> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("Impossible de lire le fichier"));
@@ -404,11 +548,18 @@ export function parseAcademicImportFile(file: File, fallbackYearLabel = ""): Pro
 
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
         const errors: string[] = [];
-        let payload: AcademicImportPayload = { year: null, classes: [], modules: [], students: [], grades: [] };
+        let payload: AcademicImportPayload = {
+          year: null,
+          classes: [],
+          modules: [],
+          students: [],
+          grades: [],
+        };
         let sheetNames: string[] = [];
 
         if (ext === "json") {
-          const text = typeof data === "string" ? data : new TextDecoder().decode(data as ArrayBuffer);
+          const text =
+            typeof data === "string" ? data : new TextDecoder().decode(data as ArrayBuffer);
           payload = parseJsonPayload(JSON.parse(text));
           sheetNames = ["JSON"];
         } else {
@@ -442,15 +593,24 @@ export function parseAcademicImportFile(file: File, fallbackYearLabel = ""): Pro
           }
 
           const classNamesFromSheets = new Set(
-            workbook.SheetNames
-              .filter((n) => !YEAR_SHEET_ALIASES.has(normalizeSheetName(n)) && !SHEET_ALIASES[normalizeSheetName(n)])
-              .map((n) => n.trim()),
+            workbook.SheetNames.filter(
+              (n) =>
+                !YEAR_SHEET_ALIASES.has(normalizeSheetName(n)) &&
+                !SHEET_ALIASES[normalizeSheetName(n)],
+            ).map((n) => n.trim()),
           );
           const yearForClasses = payload.year?.label || fallbackYearLabel;
           for (const name of classNamesFromSheets) {
-            if (!name || payload.classes.some((c) => c.name.toLowerCase() === name.toLowerCase())) continue;
+            if (!name || payload.classes.some((c) => c.name.toLowerCase() === name.toLowerCase()))
+              continue;
             if (payload.students.some((s) => s.class_name.toLowerCase() === name.toLowerCase())) {
-              payload.classes.push({ name, level: null, description: null, year_label: yearForClasses, rowIndex: 0 });
+              payload.classes.push({
+                name,
+                level: null,
+                description: null,
+                year_label: yearForClasses,
+                rowIndex: 0,
+              });
             }
           }
         }
@@ -513,9 +673,42 @@ export function downloadFullImportTemplate() {
   XLSX.utils.book_append_sheet(
     wb,
     XLSX.utils.aoa_to_sheet([
-      ["matricule", "first_name", "last_name", "gender", "date_of_birth", "email", "phone", "address", "class_name", "year_label"],
-      ["ETU001", "Jean", "Dupont", "M", "2005-03-15", "jean@exemple.fr", "0700000000", "Abidjan", "L1 Informatique", "2025-2026"],
-      ["ETU002", "Marie", "Koné", "F", "2006-07-22", "marie@exemple.fr", "0700000001", "Bouaké", "L1 Informatique", "2025-2026"],
+      [
+        "matricule",
+        "first_name",
+        "last_name",
+        "gender",
+        "date_of_birth",
+        "email",
+        "phone",
+        "address",
+        "class_name",
+        "year_label",
+      ],
+      [
+        "ETU001",
+        "Jean",
+        "Dupont",
+        "M",
+        "2005-03-15",
+        "jean@exemple.fr",
+        "0700000000",
+        "Abidjan",
+        "L1 Informatique",
+        "2025-2026",
+      ],
+      [
+        "ETU002",
+        "Marie",
+        "Koné",
+        "F",
+        "2006-07-22",
+        "marie@exemple.fr",
+        "0700000001",
+        "Bouaké",
+        "L1 Informatique",
+        "2025-2026",
+      ],
     ]),
     "Eleves",
   );
@@ -523,12 +716,22 @@ export function downloadFullImportTemplate() {
   XLSX.utils.book_append_sheet(
     wb,
     XLSX.utils.aoa_to_sheet([
-      ["matricule", "module_code", "score", "session", "class_name", "year_label"],
-      ["ETU001", "ALG101", 14.5, "Session 1", "L1 Informatique", "2025-2026"],
-      ["ETU001", "BD101", 12, "Session 1", "L1 Informatique", "2025-2026"],
-      ["ETU002", "ALG101", 16, "Session 1", "L1 Informatique", "2025-2026"],
+      ["matricule", "module_code", "score", "session", "coef_note", "class_name", "year_label"],
+      ["ETU001", "ALG101", 14.5, "Devoir 1", 2, "L1 Informatique", "2025-2026"],
+      ["ETU001", "BD101", 12, "Interro 1", 1, "L1 Informatique", "2025-2026"],
+      ["ETU002", "ALG101", 16, "Devoir 1", 2, "L1 Informatique", "2025-2026"],
     ]),
     "Notes",
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet([
+      ["nom", "prenom", "classe", "matiere", "coef_matiere", "evaluation", "coef_note", "note"],
+      ["Kouakou", "Marc", "L1 Informatique", "Physique", 3, "Examen", 2, 15],
+      ["Kouakou", "Marc", "L1 Informatique", "Physique", 3, "TP", 1, 14],
+    ]),
+    "Import Intelligent",
   );
 
   XLSX.writeFile(wb, "modele_import_complet.xlsx");
@@ -550,7 +753,11 @@ export async function executeAcademicImport(
   }
 
   let yearId: string | null = null;
-  const { data: existingYear } = await supabase.from("academic_years").select("id").eq("label", yearLabel).maybeSingle();
+  const { data: existingYear } = await supabase
+    .from("academic_years")
+    .select("id")
+    .eq("label", yearLabel)
+    .maybeSingle();
 
   if (existingYear?.id) {
     yearId = existingYear.id;
@@ -566,6 +773,7 @@ export async function executeAcademicImport(
         start_date: yearData.start_date,
         end_date: yearData.end_date,
         status: yearData.status,
+        owner_id: options.userId,
       })
       .select("id")
       .single();
@@ -579,8 +787,13 @@ export async function executeAcademicImport(
   if (!yearId) return { yearId: null, created, errors };
 
   const classIdByKey = new Map<string, string>();
-  const { data: existingClasses } = await supabase.from("classes").select("id, name").eq("academic_year_id", yearId);
-  existingClasses?.forEach((c) => classIdByKey.set(`${yearLabel}::${c.name.trim().toLowerCase()}`, c.id));
+  const { data: existingClasses } = await supabase
+    .from("classes")
+    .select("id, name")
+    .eq("academic_year_id", yearId);
+  existingClasses?.forEach((c) =>
+    classIdByKey.set(`${yearLabel}::${c.name.trim().toLowerCase()}`, c.id),
+  );
 
   const matchesYear = (yl: string) => !yl || yl === yearLabel;
 
@@ -590,7 +803,13 @@ export async function executeAcademicImport(
     if (classIdByKey.has(key)) continue;
     const { data, error } = await supabase
       .from("classes")
-      .insert({ name: cls.name, level: cls.level, description: cls.description, academic_year_id: yearId })
+      .insert({
+        name: cls.name,
+        level: cls.level,
+        description: cls.description,
+        academic_year_id: yearId,
+        owner_id: options.userId,
+      })
       .select("id")
       .single();
     if (error) errors.push(`Classe ${cls.name} (l.${cls.rowIndex}) : ${error.message}`);
@@ -601,8 +820,13 @@ export async function executeAcademicImport(
   }
 
   const moduleIdByKey = new Map<string, string>();
-  const { data: existingModules } = await supabase.from("modules").select("id, code, class_id").eq("academic_year_id", yearId);
-  existingModules?.forEach((m) => moduleIdByKey.set(`${m.class_id}::${m.code.toUpperCase()}`, m.id));
+  const { data: existingModules } = await supabase
+    .from("modules")
+    .select("id, code, class_id")
+    .eq("academic_year_id", yearId);
+  existingModules?.forEach((m) =>
+    moduleIdByKey.set(`${m.class_id}::${m.code.toUpperCase()}`, m.id),
+  );
 
   async function ensureClass(className: string): Promise<string | null> {
     const key = `${yearLabel}::${className.trim().toLowerCase()}`;
@@ -610,7 +834,7 @@ export async function executeAcademicImport(
     if (existing) return existing;
     const { data, error } = await supabase
       .from("classes")
-      .insert({ name: className, academic_year_id: yearId! })
+      .insert({ name: className, academic_year_id: yearId!, owner_id: options.userId })
       .select("id")
       .single();
     if (error) {
@@ -636,6 +860,7 @@ export async function executeAcademicImport(
         coefficient: mod.coefficient,
         class_id: classId,
         academic_year_id: yearId,
+        owner_id: options.userId,
       })
       .select("id")
       .single();
@@ -647,7 +872,10 @@ export async function executeAcademicImport(
   }
 
   const studentIdByMatricule = new Map<string, string>();
-  const { data: existingStudents } = await supabase.from("students").select("id, matricule").eq("academic_year_id", yearId);
+  const { data: existingStudents } = await supabase
+    .from("students")
+    .select("id, matricule")
+    .eq("academic_year_id", yearId);
   existingStudents?.forEach((s) => studentIdByMatricule.set(s.matricule, s.id));
 
   for (const stu of payload.students) {
@@ -668,6 +896,7 @@ export async function executeAcademicImport(
         address: stu.address,
         class_id: classId,
         academic_year_id: yearId,
+        owner_id: options.userId,
       })
       .select("id")
       .single();
@@ -695,11 +924,14 @@ export async function executeAcademicImport(
         module_id: moduleId,
         score: gr.score,
         session: gr.session,
+        coefficient: gr.coefficient,
         created_by: options.userId ?? null,
+        owner_id: options.userId,
       },
       { onConflict: "student_id,module_id,session" },
     );
-    if (error) errors.push(`Note ${gr.matricule}/${gr.module_code} (l.${gr.rowIndex}) : ${error.message}`);
+    if (error)
+      errors.push(`Note ${gr.matricule}/${gr.module_code} (l.${gr.rowIndex}) : ${error.message}`);
     else created.grades += 1;
   }
 

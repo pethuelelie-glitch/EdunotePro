@@ -3,7 +3,14 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Activity } from "lucide-react";
 
@@ -45,7 +52,9 @@ function ActivityPage() {
         <Activity className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-bold">Journal d'activité</h1>
-          <p className="text-sm text-muted-foreground">Surveillance des actions utilisateurs (500 dernières).</p>
+          <p className="text-sm text-muted-foreground">
+            Surveillance des actions utilisateurs (500 dernières).
+          </p>
         </div>
       </div>
       <div className="rounded-xl border bg-card overflow-hidden">
@@ -60,13 +69,29 @@ function ActivityPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>}
-            {logs?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Aucune activité enregistrée.</TableCell></TableRow>}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  Chargement…
+                </TableCell>
+              </TableRow>
+            )}
+            {logs?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  Aucune activité enregistrée.
+                </TableCell>
+              </TableRow>
+            )}
             {logs?.map((l) => (
               <TableRow key={l.id}>
-                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(l.created_at).toLocaleString("fr-FR")}</TableCell>
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                  {new Date(l.created_at).toLocaleString("fr-FR")}
+                </TableCell>
                 <TableCell className="text-sm">{l.user_email ?? "—"}</TableCell>
-                <TableCell><Badge variant={actionColor(l.action)}>{l.action}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant={actionColor(l.action)}>{l.action}</Badge>
+                </TableCell>
                 <TableCell className="text-sm">{l.entity_type}</TableCell>
                 <TableCell className="text-xs font-mono text-muted-foreground max-w-md truncate">
                   {l.details ? JSON.stringify(l.details) : "—"}

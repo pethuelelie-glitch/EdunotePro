@@ -18,7 +18,11 @@ function AuthLayout() {
   }, [user, loading, navigate]);
 
   if (loading || !user) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Chargement…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Chargement…
+      </div>
+    );
   }
 
   return (
@@ -26,7 +30,7 @@ function AuthLayout() {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 border-b bg-card flex items-center px-4 gap-3 sticky top-0 z-10">
+          <header className="h-14 border-b bg-card flex items-center px-4 gap-3 sticky top-0 z-10 print:hidden">
             <SidebarTrigger />
             <h2 className="font-medium text-sm text-muted-foreground">EduNote Pro</h2>
           </header>

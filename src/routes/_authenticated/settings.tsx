@@ -53,13 +53,27 @@ function SettingsPage() {
         <h2 className="font-semibold">Changer le mot de passe</h2>
         <div className="space-y-2">
           <Label htmlFor="pwd">Nouveau mot de passe</Label>
-          <Input id="pwd" type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input
+            id="pwd"
+            type="password"
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="pwd2">Confirmer</Label>
-          <Input id="pwd2" type="password" minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          <Input
+            id="pwd2"
+            type="password"
+            minLength={6}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
         </div>
-        <Button type="submit" disabled={loading}>{loading ? "Enregistrement…" : "Mettre à jour"}</Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? "Enregistrement…" : "Mettre à jour"}
+        </Button>
       </form>
     </div>
   );

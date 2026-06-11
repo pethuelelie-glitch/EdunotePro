@@ -43,10 +43,10 @@ Ou exécutez chaque `.sql` dans le **SQL Editor** Supabase.
 
 Après modification de `.env`, redémarrer le serveur (`Ctrl+C` puis `npm run dev`).
 
-| Commande | Description |
-|----------|-------------|
-| `npm run dev` | Développement |
-| `npm run build` | Build production |
+| Commande          | Description            |
+| ----------------- | ---------------------- |
+| `npm run dev`     | Développement          |
+| `npm run build`   | Build production       |
 | `npm run preview` | Prévisualiser le build |
 
 ## Import de données
@@ -59,13 +59,13 @@ Accessible à tout utilisateur connecté.
 
 Formats : Excel multi-feuilles (`.xlsx`, `.xls`, `.ods`), JSON, CSV/TXT.
 
-| Feuille Excel | Champs principaux |
-|---------------|-------------------|
-| Annee | `label`, `start_date`, `end_date`, `status` |
-| Classes | `name`, `level`, `description`, `year_label` |
-| Modules | `code`, `name`, `coefficient`, `class_name`, `year_label` |
-| Eleves | `matricule`, `first_name`, `last_name`, `gender`, `class_name`, `year_label`, … |
-| Notes | `matricule`, `module_code`, `score`, `session`, `class_name`, `year_label` |
+| Feuille Excel | Champs principaux                                                               |
+| ------------- | ------------------------------------------------------------------------------- |
+| Annee         | `label`, `start_date`, `end_date`, `status`                                     |
+| Classes       | `name`, `level`, `description`, `year_label`                                    |
+| Modules       | `code`, `name`, `coefficient`, `class_name`, `year_label`                       |
+| Eleves        | `matricule`, `first_name`, `last_name`, `gender`, `class_name`, `year_label`, … |
+| Notes         | `matricule`, `module_code`, `score`, `session`, `class_name`, `year_label`      |
 
 Téléchargez le modèle depuis le dialogue. Colonnes en français ou anglais.  
 Ordre automatique : année → classes → modules → élèves → notes.
@@ -80,9 +80,9 @@ L'email `admin@gmail.com` reçoit le rôle **admin** à l'inscription. Promotion
 
 ## Dépannage
 
-| Problème | Solution |
-|----------|----------|
-| Variables Supabase manquantes | Vérifier `.env`, redémarrer `npm run dev` |
-| `ERESOLVE` / `nitro` | `nitro` en `3.0.260603-beta` dans `package.json`, supprimer `node_modules`, `npm install` |
-| Import refusé | Être connecté ; migrations appliquées ; classe existante pour l'import élèves |
-| `npm install` réseau | Réessayer ; `npm install --legacy-peer-deps` en dernier recours |
+| Problème                      | Solution                                                                                  |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| Variables Supabase manquantes | Vérifier `.env`, redémarrer `npm run dev`                                                 |
+| `ERESOLVE` / `nitro`          | `nitro` en `3.0.260603-beta` dans `package.json`, supprimer `node_modules`, `npm install` |
+| Import refusé                 | Être connecté ; migrations appliquées ; classe existante pour l'import élèves             |
+| `npm install` réseau          | Réessayer ; `npm install --legacy-peer-deps` en dernier recours                           |

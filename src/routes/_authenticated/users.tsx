@@ -3,11 +3,36 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({ meta: [{ title: "Utilisateurs — EduNote Pro" }] }),
@@ -49,6 +74,13 @@ function UsersPage() {
     qc.invalidateQueries({ queryKey: ["admin-users"] });
   };
 
+  const deleteUser = async (userId: string) => {
+    const { error } = await supabase.rpc("admin_delete_user", { _user_id: userId });
+    if (error) return toast.error(error.message);
+    toast.success("Utilisateur supprimé avec succès");
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  };
+
   if (!isAdmin) return null;
 
   return (
@@ -72,10 +104,18 @@ function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Chargement…</TableCell></TableRow>}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  Chargement…
+                </TableCell>
+              </TableRow>
+            )}
             {users?.map((u) => (
               <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.first_name ?? "—"} {u.last_name ?? ""}</TableCell>
+                <TableCell className="font-medium">
+                  {u.first_name ?? "—"} {u.last_name ?? ""}
+                </TableCell>
                 <TableCell>{u.email}</TableCell>
                 <TableCell>
                   <Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge>
@@ -83,15 +123,51 @@ function UsersPage() {
                 <TableCell>{new Date(u.created_at).toLocaleDateString("fr-FR")}</TableCell>
                 <TableCell className="text-right">
                   {u.id === me?.id ? (
-                    <span className="text-xs text-muted-foreground">Vous</span>
+                    <span className="text-xs text-muted-foreground mr-4">Vous</span>
                   ) : (
-                    <Select value={u.role} onValueChange={(v) => changeRole(u.id, v as "admin" | "user")}>
-                      <SelectTrigger className="w-32 ml-auto"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">Utilisateur</SelectItem>
-                        <SelectItem value="admin">Administrateur</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-end gap-2">
+                      <Select
+                        value={u.role}
+                        onValueChange={(v) => changeRole(u.id, v as "admin" | "user")}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">Utilisateur</SelectItem>
+                          <SelectItem value="admin">Administrateur</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" title="Supprimer cet utilisateur">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2">
+                              <AlertTriangle className="h-5 w-5 text-destructive" />
+                              Supprimer l'utilisateur ?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action est irréversible. Toutes les données associées à cet
+                              utilisateur (classes, élèves, notes) seront définitivement supprimées.
+                              Êtes-vous sûr de vouloir continuer ?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteUser(u.id)}
+                              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                            >
+                              Oui, supprimer
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   )}
                 </TableCell>
               </TableRow>

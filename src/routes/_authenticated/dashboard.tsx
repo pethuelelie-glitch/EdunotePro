@@ -9,7 +9,17 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-function StatCard({ icon: Icon, label, value, color }: { icon: typeof Users; label: string; value: string | number; color: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  color,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: string | number;
+  color: string;
+}) {
   return (
     <div className="rounded-xl border bg-card p-5">
       <div className="flex items-center justify-between">
@@ -54,10 +64,11 @@ function Dashboard() {
       students.data?.forEach((s) => {
         studentsByClass.set(s.class_id, (studentsByClass.get(s.class_id) ?? 0) + 1);
       });
-      const chart = classes.data?.map((c) => ({
-        name: c.name,
-        étudiants: studentsByClass.get(c.id) ?? 0,
-      })) ?? [];
+      const chart =
+        classes.data?.map((c) => ({
+          name: c.name,
+          étudiants: studentsByClass.get(c.id) ?? 0,
+        })) ?? [];
 
       return {
         students: students.count ?? 0,
@@ -78,11 +89,36 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <StatCard icon={Users} label="Étudiants" value={data?.students ?? 0} color="bg-primary/10 text-primary" />
-        <StatCard icon={GraduationCap} label="Classes" value={data?.classes ?? 0} color="bg-success/10 text-success" />
-        <StatCard icon={BookOpen} label="Modules" value={data?.modules ?? 0} color="bg-accent text-accent-foreground" />
-        <StatCard icon={ClipboardList} label="Notes saisies" value={data?.grades ?? 0} color="bg-warning/10 text-warning" />
-        <StatCard icon={TrendingUp} label="Moyenne générale" value={data?.avg != null ? data.avg.toFixed(2) : "0.00"} color="bg-primary/10 text-primary" />
+        <StatCard
+          icon={Users}
+          label="Étudiants"
+          value={data?.students ?? 0}
+          color="bg-primary/10 text-primary"
+        />
+        <StatCard
+          icon={GraduationCap}
+          label="Classes"
+          value={data?.classes ?? 0}
+          color="bg-success/10 text-success"
+        />
+        <StatCard
+          icon={BookOpen}
+          label="Modules"
+          value={data?.modules ?? 0}
+          color="bg-accent text-accent-foreground"
+        />
+        <StatCard
+          icon={ClipboardList}
+          label="Notes saisies"
+          value={data?.grades ?? 0}
+          color="bg-warning/10 text-warning"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Moyenne générale"
+          value={data?.avg != null ? data.avg.toFixed(2) : "0.00"}
+          color="bg-primary/10 text-primary"
+        />
       </div>
 
       <div className="rounded-xl border bg-card p-6">
@@ -93,15 +129,15 @@ function Dashboard() {
               Aucune classe — créez une année et des classes pour voir le graphique.
             </p>
           ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.chart}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" fontSize={12} />
-              <YAxis fontSize={12} allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="étudiants" fill="oklch(0.58 0.21 260)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.chart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis fontSize={12} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="étudiants" fill="oklch(0.58 0.21 260)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
       </div>

@@ -5,7 +5,11 @@ export interface GradeRow {
   coefficient: number;
 }
 
-export function studentAverage(grades: GradeRow[]): { average: number; totalCoef: number; totalPoints: number } {
+export function studentAverage(grades: GradeRow[]): {
+  average: number;
+  totalCoef: number;
+  totalPoints: number;
+} {
   const totalCoef = grades.reduce((s, g) => s + g.coefficient, 0);
   const totalPoints = grades.reduce((s, g) => s + g.score * g.coefficient, 0);
   return { average: totalCoef > 0 ? totalPoints / totalCoef : 0, totalCoef, totalPoints };

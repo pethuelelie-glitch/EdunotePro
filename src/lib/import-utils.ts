@@ -98,7 +98,8 @@ export function parseImportFile(file: File): Promise<ParsedImportRow[]> {
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 
         if (ext === "json") {
-          const text = typeof data === "string" ? data : new TextDecoder().decode(data as ArrayBuffer);
+          const text =
+            typeof data === "string" ? data : new TextDecoder().decode(data as ArrayBuffer);
           const parsed = JSON.parse(text) as unknown;
           const arr = Array.isArray(parsed) ? parsed : [parsed];
           resolve(
@@ -264,8 +265,28 @@ export function downloadImportTemplate() {
     "class_name",
   ];
   const sample = [
-    ["ETU001", "Jean", "Dupont", "M", "2005-03-15", "jean@exemple.fr", "0700000000", "Abidjan", "L1 Informatique"],
-    ["ETU002", "Marie", "Koné", "F", "2006-07-22", "marie@exemple.fr", "0700000001", "Bouaké", "L1 Informatique"],
+    [
+      "ETU001",
+      "Jean",
+      "Dupont",
+      "M",
+      "2005-03-15",
+      "jean@exemple.fr",
+      "0700000000",
+      "Abidjan",
+      "L1 Informatique",
+    ],
+    [
+      "ETU002",
+      "Marie",
+      "Koné",
+      "F",
+      "2006-07-22",
+      "marie@exemple.fr",
+      "0700000001",
+      "Bouaké",
+      "L1 Informatique",
+    ],
   ];
   const ws = XLSX.utils.aoa_to_sheet([headers, ...sample]);
   const wb = XLSX.utils.book_new();

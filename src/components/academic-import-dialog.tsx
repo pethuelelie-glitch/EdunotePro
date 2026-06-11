@@ -12,7 +12,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileSpreadsheet, Database } from "lucide-react";
 import { toast } from "sonner";
@@ -34,7 +40,13 @@ interface AcademicImportDialogProps {
   years: YearOption[];
 }
 
-const EMPTY: AcademicImportPayload = { year: null, classes: [], modules: [], students: [], grades: [] };
+const EMPTY: AcademicImportPayload = {
+  year: null,
+  classes: [],
+  modules: [],
+  students: [],
+  grades: [],
+};
 
 export function AcademicImportDialog({ years }: AcademicImportDialogProps) {
   const { user } = useAuth();
@@ -139,14 +151,20 @@ export function AcademicImportDialog({ years }: AcademicImportDialogProps) {
 
         <div className="text-sm text-muted-foreground space-y-2">
           <p>
-            Importez <strong>toute une année scolaire</strong> : année, classes, modules, élèves et notes.
-            Formats : Excel multi-feuilles (.xlsx, .xls, .ods), CSV, JSON.
+            Importez <strong>toute une année scolaire</strong> : année, classes, modules, élèves et
+            notes. Formats : Excel multi-feuilles (.xlsx, .xls, .ods), CSV, JSON.
           </p>
           <p className="text-xs">
-            Chaque feuille peut représenter une classe (ex. Primaire, Secondaire). Seuls les champs présents
-            sont importés — les colonnes manquantes sont ignorées.
+            <strong>Nouveau :</strong> Vous pouvez uploader un tableau plat (Nom, Prénom, Classe,
+            Matière, Note, Coef Note) et le système classera tout intelligemment ! Les colonnes
+            manquantes sont ignorées.
           </p>
-          <Button type="button" variant="link" className="h-auto p-0" onClick={downloadFullImportTemplate}>
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0"
+            onClick={downloadFullImportTemplate}
+          >
             <FileSpreadsheet className="h-4 w-4 mr-1" />
             Télécharger le modèle Excel complet
           </Button>
@@ -185,7 +203,12 @@ export function AcademicImportDialog({ years }: AcademicImportDialogProps) {
             className="hidden"
             onChange={onFileChange}
           />
-          <Button type="button" variant="secondary" className="w-full" onClick={() => inputRef.current?.click()}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            onClick={() => inputRef.current?.click()}
+          >
             <Upload className="h-4 w-4 mr-2" />
             {fileName || "Choisir un fichier"}
           </Button>
@@ -194,7 +217,9 @@ export function AcademicImportDialog({ years }: AcademicImportDialogProps) {
         {preview && (
           <div className="space-y-3">
             {preview.sheetNames.length > 0 && (
-              <p className="text-xs text-muted-foreground">Feuilles détectées : {preview.sheetNames.join(", ")}</p>
+              <p className="text-xs text-muted-foreground">
+                Feuilles détectées : {preview.sheetNames.join(", ")}
+              </p>
             )}
             <div className="flex flex-wrap gap-2">
               {preview.year && <Badge variant="default">Année : {preview.year.label}</Badge>}

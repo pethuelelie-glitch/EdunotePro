@@ -6,9 +6,17 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "EduNote Pro — Plateforme de gestion académique" },
-      { name: "description", content: "Gérez étudiants, classes, modules, notes, moyennes et classements en un seul endroit. Moderne, rapide, sécurisé." },
+      {
+        name: "description",
+        content:
+          "Gérez étudiants, classes, modules, notes, moyennes et classements en un seul endroit. Moderne, rapide, sécurisé.",
+      },
       { property: "og:title", content: "EduNote Pro" },
-      { property: "og:description", content: "La plateforme moderne de gestion académique pour établissements scolaires et universitaires." },
+      {
+        property: "og:description",
+        content:
+          "La plateforme moderne de gestion académique pour établissements scolaires et universitaires.",
+      },
     ],
   }),
   component: Landing,
@@ -41,15 +49,19 @@ function Landing() {
               Gérez votre établissement <span className="text-primary">en toute simplicité</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
-              Étudiants, classes, modules, notes, moyennes, classements et bulletins.
-              Tout EduNote Pro réunis dans une interface moderne et sécurisée.
+              Étudiants, classes, modules, notes, moyennes, classements et bulletins. Tout EduNote
+              Pro réunis dans une interface moderne et sécurisée.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Link to="/auth">
-                <Button size="lg" className="h-12 px-8">Commencer maintenant</Button>
+                <Button size="lg" className="h-12 px-8">
+                  Commencer maintenant
+                </Button>
               </Link>
               <Link to="/dashboard">
-                <Button size="lg" variant="outline" className="h-12 px-8">Tableau de bord</Button>
+                <Button size="lg" variant="outline" className="h-12 px-8">
+                  Tableau de bord
+                </Button>
               </Link>
             </div>
           </div>
@@ -58,14 +70,41 @@ function Landing() {
         <section className="container mx-auto px-6 pb-24">
           <div className="grid gap-6 md:grid-cols-3">
             {[
-              { icon: Users, title: "Gestion des étudiants", desc: "Fichier complet : matricule, classe, contacts." },
-              { icon: BookOpen, title: "Modules & coefficients", desc: "Organisez vos matières par classe et par année." },
-              { icon: Trophy, title: "Classements automatiques", desc: "Moyennes, rangs et mentions calculés en temps réel." },
-              { icon: BarChart3, title: "Tableau de bord", desc: "Statistiques claires sur toute votre activité." },
-              { icon: FileDown, title: "Exports & bulletins PDF", desc: "Excel, CSV, PDF. Bulletins officiels en un clic." },
-              { icon: GraduationCap, title: "Multi-année", desc: "Archivez et basculez entre années académiques." },
+              {
+                icon: Users,
+                title: "Gestion des étudiants",
+                desc: "Fichier complet : matricule, classe, contacts.",
+              },
+              {
+                icon: BookOpen,
+                title: "Modules & coefficients",
+                desc: "Organisez vos matières par classe et par année.",
+              },
+              {
+                icon: Trophy,
+                title: "Classements automatiques",
+                desc: "Moyennes, rangs et mentions calculés en temps réel.",
+              },
+              {
+                icon: BarChart3,
+                title: "Tableau de bord",
+                desc: "Statistiques claires sur toute votre activité.",
+              },
+              {
+                icon: FileDown,
+                title: "Exports & bulletins PDF",
+                desc: "Excel, CSV, PDF. Bulletins officiels en un clic.",
+              },
+              {
+                icon: GraduationCap,
+                title: "Multi-année",
+                desc: "Archivez et basculez entre années académiques.",
+              },
             ].map((f) => (
-              <div key={f.title} className="rounded-xl border bg-card p-6 transition hover:shadow-md">
+              <div
+                key={f.title}
+                className="rounded-xl border bg-card p-6 transition hover:shadow-md"
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <f.icon className="h-5 w-5" />
                 </div>

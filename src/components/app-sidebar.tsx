@@ -1,8 +1,29 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList, Trophy, CalendarRange, LogOut, GanttChart, ShieldCheck, Activity, Settings } from "lucide-react";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter,
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  BookOpen,
+  ClipboardList,
+  Trophy,
+  CalendarRange,
+  LogOut,
+  GanttChart,
+  ShieldCheck,
+  Activity,
+  Settings,
+} from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -27,7 +48,7 @@ export function AppSidebar() {
   const { user, role, signOut, isAdmin } = useAuth();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="print:hidden">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -84,7 +105,9 @@ export function AppSidebar() {
             <p className="text-muted-foreground capitalize">{role}</p>
           </div>
           <Button variant="ghost" size="sm" asChild className="justify-start">
-            <Link to="/settings"><Settings className="h-4 w-4 mr-2" /> Paramètres</Link>
+            <Link to="/settings">
+              <Settings className="h-4 w-4 mr-2" /> Paramètres
+            </Link>
           </Button>
           <Button variant="ghost" size="sm" onClick={signOut} className="justify-start">
             <LogOut className="h-4 w-4 mr-2" /> Déconnexion

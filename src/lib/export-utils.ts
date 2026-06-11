@@ -2,7 +2,11 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export function exportToExcel(rows: Record<string, unknown>[], filename: string, sheetName = "Données") {
+export function exportToExcel(
+  rows: Record<string, unknown>[],
+  filename: string,
+  sheetName = "Données",
+) {
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
@@ -15,7 +19,9 @@ export function exportToCSV(rows: Record<string, unknown>[], filename: string) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = `${filename}.csv`; a.click();
+  a.href = url;
+  a.download = `${filename}.csv`;
+  a.click();
   URL.revokeObjectURL(url);
 }
 

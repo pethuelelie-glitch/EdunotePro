@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,8 +12,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Upload, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -34,6 +48,7 @@ interface StudentImportDialogProps {
 }
 
 export function StudentImportDialog({ classes }: StudentImportDialogProps) {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const allRecordsRef = useRef<StudentImportRecord[]>([]);
@@ -80,7 +95,9 @@ export function StudentImportDialog({ classes }: StudentImportDialogProps) {
 
   const classCache = new Map<string, { id: string; academic_year_id: string }>();
 
-  const ensureClass = async (className: string): Promise<{ id: string; academic_year_id: string } | null> => {
+  const ensureClass = async (
+    className: string,
+  ): Promise<{ id: string; academic_year_id: string } | null> => {
     const key = className.trim().toLowerCase();
     const cached = classCache.get(key);
     if (cached) return cached;
@@ -106,7 +123,7 @@ export function StudentImportDialog({ classes }: StudentImportDialogProps) {
 
     const { data, error } = await supabase
       .from("classes")
-      .insert({ name: className, academic_year_id: yearId })
+      .insert({ name: className, academic_year_id: yearId, owner_id: user!.id })
       .select("id, academic_year_id")
       .single();
     if (error || !data) return null;
@@ -129,7 +146,9 @@ export function StudentImportDialog({ classes }: StudentImportDialogProps) {
     for (const rec of records) {
       const cls = await ensureClass(rec.class_name);
       if (!cls) {
-        failures.push(`Ligne ${rec.rowIndex} : impossible de créer la classe « ${rec.class_name} »`);
+        failures.push(
+          `Ligne ${rec.rowIndex} : impossible de créer la classe « ${rec.class_name} »`,
+        );
         continue;
       }
 
@@ -144,6 +163,7 @@ export function StudentImportDialog({ classes }: StudentImportDialogProps) {
         address: rec.address,
         class_id: cls.id,
         academic_year_id: cls.academic_year_id,
+        owner_id: user!.id,
       });
 
       if (error) {
@@ -194,7 +214,12 @@ export function StudentImportDialog({ classes }: StudentImportDialogProps) {
             Formats : Excel, CSV, JSON. Seuls les champs présents sont importés — matricule et noms
             générés automatiquement si absents.
           </p>
-          <Button type="button" variant="link" className="h-auto p-0" onClick={downloadImportTemplate}>
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0"
+            onClick={downloadImportTemplate}
+          >
             <FileSpreadsheet className="h-4 w-4 mr-1" />
             Télécharger le modèle Excel
           </Button>

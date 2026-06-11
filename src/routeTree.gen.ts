@@ -22,6 +22,7 @@ import { Route as AuthenticatedGradesRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
+import { Route as AuthenticatedYearReportYearIdRouteImport } from './routes/_authenticated/year-report.$yearId'
 import { Route as AuthenticatedBulletinStudentIdRouteImport } from './routes/_authenticated/bulletin.$studentId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -88,6 +89,12 @@ const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedYearReportYearIdRoute =
+  AuthenticatedYearReportYearIdRouteImport.update({
+    id: '/year-report/$yearId',
+    path: '/year-report/$yearId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBulletinStudentIdRoute =
   AuthenticatedBulletinStudentIdRouteImport.update({
     id: '/bulletin/$studentId',
@@ -109,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/years': typeof AuthenticatedYearsRoute
   '/bulletin/$studentId': typeof AuthenticatedBulletinStudentIdRoute
+  '/year-report/$yearId': typeof AuthenticatedYearReportYearIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -124,6 +132,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/years': typeof AuthenticatedYearsRoute
   '/bulletin/$studentId': typeof AuthenticatedBulletinStudentIdRoute
+  '/year-report/$yearId': typeof AuthenticatedYearReportYearIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,6 +150,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/years': typeof AuthenticatedYearsRoute
   '/_authenticated/bulletin/$studentId': typeof AuthenticatedBulletinStudentIdRoute
+  '/_authenticated/year-report/$yearId': typeof AuthenticatedYearReportYearIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/years'
     | '/bulletin/$studentId'
+    | '/year-report/$yearId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/years'
     | '/bulletin/$studentId'
+    | '/year-report/$yearId'
   id:
     | '__root__'
     | '/'
@@ -189,6 +201,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/years'
     | '/_authenticated/bulletin/$studentId'
+    | '/_authenticated/year-report/$yearId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/year-report/$yearId': {
+      id: '/_authenticated/year-report/$yearId'
+      path: '/year-report/$yearId'
+      fullPath: '/year-report/$yearId'
+      preLoaderRoute: typeof AuthenticatedYearReportYearIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/bulletin/$studentId': {
       id: '/_authenticated/bulletin/$studentId'
       path: '/bulletin/$studentId'
@@ -312,6 +332,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedYearsRoute: typeof AuthenticatedYearsRoute
   AuthenticatedBulletinStudentIdRoute: typeof AuthenticatedBulletinStudentIdRoute
+  AuthenticatedYearReportYearIdRoute: typeof AuthenticatedYearReportYearIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -326,6 +347,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedYearsRoute: AuthenticatedYearsRoute,
   AuthenticatedBulletinStudentIdRoute: AuthenticatedBulletinStudentIdRoute,
+  AuthenticatedYearReportYearIdRoute: AuthenticatedYearReportYearIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
